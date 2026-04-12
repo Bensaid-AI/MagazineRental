@@ -1,5 +1,12 @@
 'use client'
 import { useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
+
+interface User {
+  id: string
+  email: string
+  role: string
+}
 
 interface SidebarProps {
   activeTab: string
@@ -8,6 +15,33 @@ interface SidebarProps {
 
 export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
   const router = useRouter()
+  const [user, setUser] = useState<User | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetchUser()
+  }, [])
+
+  const fetchUser = async () => {
+    try {
+      setLoading(true)
+      const response = await fetch('/api/auth/user')
+      
+      if (response.ok) {
+        const data = await response.json()
+        setUser(data.user)
+      } else {
+        setUser(null)
+      }
+    } catch (error) {
+      console.error('Error fetching user:', error)
+      setUser(null)
+    } finally {
+      setLoading(false)
+    }
+  }
+  
+
 
   const handleLogout = async () => {
     try {
@@ -101,11 +135,17 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
       <div className="absolute bottom-0 w-64 border-t border-gray-700 p-6">
         <div className="flex items-center space-x-4 mb-4">
           <div className="w-10 h-10 bg-indigo-600 rounded-full flex items-center justify-center">
-            <span className="text-sm font-bold">A</span>
+            <span className="text-sm font-bold">
+              {loading ? '...' : (user?.email?.[0] || 'U').toUpperCase()}
+            </span>
           </div>
-          <div>
-            <p className="text-sm font-medium">Admin User</p>
-            <p className="text-xs text-gray-400">admin@platform.com</p>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium truncate">
+              {loading ? 'Loading...' : user?.email || 'User'}
+            </p>
+            <p className="text-xs text-gray-400 truncate">
+              {loading ? 'Please wait' : user?.role || 'user'}
+            </p>
           </div>
         </div>
         <button
