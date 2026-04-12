@@ -34,10 +34,10 @@ export default function RegisterPage() {
       })
  
       if (response.ok) {
-        setSuccess('Account created successfully! Please check your email to confirm.')
+        setSuccess('Account created successfully! Redirecting to dashboard...')
         setTimeout(() => {
-          router.push('/auth/login')
-        }, 2000)
+          router.push('/dashboard')
+        }, 1500)
       } else {
         const data = await response.json()
         setError(data.error || 'Registration failed. Please try again.')

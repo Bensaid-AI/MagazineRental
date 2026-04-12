@@ -9,9 +9,24 @@ interface SidebarProps {
 export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
   const router = useRouter()
 
-  const handleLogout = () => {
-    localStorage.removeItem('token')
-    router.push('/auth/login')
+  const handleLogout = async () => {
+    try {
+      const response = await fetch('/api/auth/logout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      })
+
+      if (response.ok) {
+        // Clear browser session and redirect to login
+        router.push('/auth/login')
+      } else {
+        console.error('Logout failed')
+      }
+    } catch (error) {
+      console.error('Logout error:', error)
+      // Still redirect on error
+      router.push('/auth/login')
+    }
   }
 
   const menuItems = [

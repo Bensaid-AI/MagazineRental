@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabaseClient'
+import { supabaseServer } from '@/lib/supabaseServer'
 import { NextResponse } from 'next/server'
 
 export async function POST(req: Request) {
@@ -12,13 +12,15 @@ export async function POST(req: Request) {
       )
     }
 
-    // Sign in user with Supabase Auth
-    const { data, error } = await supabase.auth.signInWithPassword({
+    // Sign in user with Supabase Auth (server-side for security)
+    const { data, error } = await supabaseServer.auth.signInWithPassword({
       email,
       password,
     })
 
     if (error) throw new Error(error.message)
+
+    console.log('Login successful for:', email, 'Token:', data.session?.access_token ? 'Set' : 'Not set')
 
     // Create response
     const response = NextResponse.json({ 
@@ -33,6 +35,7 @@ export async function POST(req: Request) {
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
         maxAge: 60 * 60 * 24 * 7, // 7 days
+        path: '/',
       })
     }
 

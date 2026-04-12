@@ -48,16 +48,18 @@ export async function POST(req: Request) {
     // Create response
     const response = NextResponse.json({ 
       user: data.user,
-      message: 'Registration successful! Please verify your email.'
+      message: 'Registration successful!'
     })
 
     // Set auth token in cookie if available
     if (data.session?.access_token) {
+      console.log('Setting token for new user:', data.user?.email)
       response.cookies.set('sb:token', data.session.access_token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
         maxAge: 60 * 60 * 24 * 7, // 7 days
+        path: '/',
       })
     }
 
