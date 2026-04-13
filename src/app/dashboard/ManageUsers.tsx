@@ -6,6 +6,8 @@ interface Profile {
   email: string
   role: string
   created_at: string
+  fullname: string
+  cin: string
 }
 
 export default function ManageUsers() {
@@ -99,7 +101,10 @@ export default function ManageUsers() {
               <thead>
                 <tr className="border-b-2 border-green-200 bg-green-50">
                   <th className="px-8 py-4 text-left">
-                    <span className="text-amber-900 font-bold text-sm uppercase tracking-wide">User ID</span>
+                    <span className="text-amber-900 font-bold text-sm uppercase tracking-wide">Full Name</span>
+                  </th>
+                  <th className="px-8 py-4 text-left">
+                    <span className="text-amber-900 font-bold text-sm uppercase tracking-wide">CIN</span>
                   </th>
                   <th className="px-8 py-4 text-left">
                     <span className="text-amber-900 font-bold text-sm uppercase tracking-wide">Email</span>
@@ -121,9 +126,10 @@ export default function ManageUsers() {
                     }`}
                   >
                     <td className="px-8 py-4">
-                      <code className="bg-gray-100 text-amber-900 px-3 py-1 rounded font-mono text-sm">
-                        {profile.id.substring(0, 12)}...
-                      </code>
+                      <span className="text-gray-800 font-medium">{profile.fullname}</span>
+                    </td>
+                    <td className="px-8 py-4">
+                      <span className="text-gray-800 font-medium">{profile.cin}</span>
                     </td>
                     <td className="px-8 py-4">
                       <span className="text-gray-800 font-medium">{profile.email}</span>

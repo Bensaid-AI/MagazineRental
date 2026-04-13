@@ -16,6 +16,8 @@ export default function RegisterPage() {
  
     const formData = new FormData(event.currentTarget)
     const email = formData.get('email')
+    const fullname = formData.get('fullname')
+    const cin = formData.get('cin')
     const password = formData.get('password')
     const confirmPassword = formData.get('confirmPassword')
  
@@ -30,7 +32,7 @@ export default function RegisterPage() {
       const response = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password, fullname, cin }),
       })
  
       if (response.ok) {
@@ -85,6 +87,34 @@ export default function RegisterPage() {
                 type="email"
                 name="email"
                 placeholder="you@example.com"
+                required
+                className="w-full px-4 py-2 border border-black-300 text-black rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition"
+              />
+            </div>
+              {/* Full Name Input */}
+              <div>
+              <label htmlFor="fullname" className="block text-sm font-medium text-black mb-2">
+                Full Name
+              </label>
+              <input
+                id="fullname"
+                type="text"
+                name="fullname"
+                placeholder="John Doe"
+                required
+                className="w-full px-4 py-2 border border-black-300 text-black rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="cin" className="block text-sm font-medium text-black mb-2">
+                CIN
+              </label>
+              <input
+                id="cin"
+                type="text"
+                name="cin"
+                placeholder="AA123456"
                 required
                 className="w-full px-4 py-2 border border-black-300 text-black rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition"
               />
