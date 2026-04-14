@@ -24,7 +24,7 @@ export default function LoginPage() {
       })
  
       if (response.ok) {
-        router.push('/dashboard')
+        router.push('/components/dashboard')
       } else {
         const data = await response.json()
         setError(data.error || 'Login failed. Please try again.')

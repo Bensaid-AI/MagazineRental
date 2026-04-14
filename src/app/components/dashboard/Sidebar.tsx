@@ -1,6 +1,4 @@
 'use client'
-import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
 
 interface User {
   id: string
@@ -11,38 +9,11 @@ interface User {
 interface SidebarProps {
   activeTab: string
   setActiveTab: (tab: string) => void
+  user: User | null
+  loading: boolean
 }
 
-export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
-  const router = useRouter()
-  const [user, setUser] = useState<User | null>(null)
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    fetchUser()
-  }, [])
-
-  const fetchUser = async () => {
-    try {
-      setLoading(true)
-      const response = await fetch('/api/auth/user')
-      
-      if (response.ok) {
-        const data = await response.json()
-        setUser(data.user)
-      } else {
-        setUser(null)
-      }
-    } catch (error) {
-      console.error('Error fetching user:', error)
-      setUser(null)
-    } finally {
-      setLoading(false)
-    }
-  }
-  
-
-
+export default function Sidebar({ activeTab, setActiveTab, user, loading }: SidebarProps) {
   const handleLogout = async () => {
     try {
       const response = await fetch('/api/auth/logout', {
@@ -52,14 +23,14 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
 
       if (response.ok) {
         // Clear browser session and redirect to login
-        router.push('/auth/login')
+        window.location.href = '/auth/login'
       } else {
         console.error('Logout failed')
       }
     } catch (error) {
       console.error('Logout error:', error)
       // Still redirect on error
-      router.push('/auth/login')
+      window.location.href = '/auth/login'
     }
   }
 
@@ -67,7 +38,6 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
     {
       id: 'overview',
       label: 'Dashboard',
-      route: '/dashboard',
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-3m2-2l6-6m0 0l6 6m-6-6v13m-6 0H3m18 0h-2" />
@@ -78,7 +48,6 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
     {
       id: 'rent',
       label: 'Rent',
-      route: '/rent',
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -89,7 +58,6 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
     {
       id: 'profile',
       label: 'Profile',
-      route: '/profile',
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
@@ -100,7 +68,6 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
     {
       id: 'users',
       label: 'Manage Users',
-      route: '/manageusers',
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.856-1.487M15 10a3 3 0 11-6 0 3 3 0 016 0zM6 20a9 9 0 0118 0v2h-2v-2a7 7 0 00-14 0v2H6v-2z" />
@@ -111,7 +78,6 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
     {
       id: 'validation',
       label: 'Validation',
-      route: '/rentvalidation',
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -122,7 +88,6 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
     {
       id: 'rental',
       label: 'Manage Rental',
-      route: '/managerent',
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
@@ -152,7 +117,6 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
               key={item.id}
               onClick={() => {
                 setActiveTab(item.id)
-                router.push(item.route)
               }}
               className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition ${
                 activeTab === item.id

@@ -1,30 +1,62 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Sidebar from './Sidebar'
-import ManageUsers from './users/ManageUsers'
-import Validation from './Validation'
+import ManageUsersPage from '../manageusers/page'
+import Validation from '../rentvalidation/Validation'
+import RentPage from '../rent/page'
+import ProfilePage from '../profile/page'
+import ManageRentalPage from '../managerent/page'
+
+interface User {
+  id: string
+  email: string
+  role: string
+}
 
 export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState('overview')
+  const [user, setUser] = useState<User | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetchUser()
+  }, [])
+
+  const fetchUser = async () => {
+    try {
+      setLoading(true)
+      const response = await fetch('/api/auth/user')
+      
+      if (response.ok) {
+        const data = await response.json()
+        setUser(data.user)
+      } else {
+        setUser(null)
+      }
+    } catch (error) {
+      console.error('Error fetching user:', error)
+      setUser(null)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   return (
     <div className="flex h-screen bg-gray-100">
       {/* Sidebar */}
-      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} user={user} loading={loading} />
 
       {/* Main Content */}
       <main className="flex-1 overflow-auto">
-        <div className="p-8">
-          {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
-            <p className="text-gray-600 mt-2">Welcome to the platform management dashboard</p>
-          </div>
+        {/* Overview Tab */}
+        {activeTab === 'overview' && (
+          <div className="p-8">
+            <div className="mb-8">
+              <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
+              <p className="text-gray-600 mt-2">Welcome to the platform management dashboard</p>
+            </div>
 
-          {/* Content based on active tab */}
-          {activeTab === 'overview' && (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {/* Stats Cards */}
               <div className="bg-white rounded-lg shadow p-6">
                 <div className="flex items-center justify-between">
                   <div>
@@ -67,11 +99,23 @@ export default function DashboardPage() {
                 </div>
               </div>
             </div>
-          )}
+          </div>
+        )}
 
-          {activeTab === 'users' && <ManageUsers />}
-          {activeTab === 'validation' && <Validation />}
-        </div>
+        {/* Rent Tab */}
+        {activeTab === 'rent' && <RentPage />}
+
+        {/* Profile Tab */}
+        {activeTab === 'profile' && <ProfilePage />}
+
+        {/* Users Tab */}
+        {activeTab === 'users' && <ManageUsersPage />}
+
+        {/* Validation Tab */}
+        {activeTab === 'validation' && <Validation />}
+
+        {/* Rental Tab */}
+        {activeTab === 'rental' && <ManageRentalPage />}
       </main>
     </div>
   )

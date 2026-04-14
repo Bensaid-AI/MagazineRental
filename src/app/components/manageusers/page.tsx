@@ -1,7 +1,5 @@
 'use client'
 import { useState ,useEffect} from 'react'
-import Sidebar from '../dashboard/Sidebar'
-
 
 interface Profile {
   id: string
@@ -13,37 +11,33 @@ interface Profile {
 }
 
 export default function ManageUsersPage() {
-  const [activeTab, setActiveTab] = useState('users')
   const [profiles, setProfiles] = useState<Profile[]>([])
-    const [loading, setLoading] = useState(true)
-    const [error, setError] = useState('')
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    fetchProfiles()
+  }, [])
   
-    useEffect(() => {
-      fetchProfiles()
-    }, [])
-  
-    async function fetchProfiles() {
-      try {
-        const response = await fetch('/api/profiles')
-        const data = await response.json()
-        
-        if (response.ok) {
-          setProfiles(data.profiles || [])
-        } else {
-          setError(data.error || 'Failed to fetch profiles')
-        }
-      } catch (err: any) {
-        setError(err.message || 'Something went wrong')
-      } finally {
-        setLoading(false)
+  async function fetchProfiles() {
+    try {
+      const response = await fetch('/api/profiles')
+      const data = await response.json()
+      
+      if (response.ok) {
+        setProfiles(data.profiles || [])
+      } else {
+        setError(data.error || 'Failed to fetch profiles')
       }
+    } catch (err: any) {
+      setError(err.message || 'Something went wrong')
+    } finally {
+      setLoading(false)
     }
+  }
 
   return (
-    <div className="flex h-screen bg-gray-100">
-      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
-      <main className="flex-1 overflow-auto">
-            <div className="min-h-screen bg-gradient-to-br from-amber-50 to-green-50 p-8">
+    <div className="min-h-screen bg-gradient-to-br from-amber-50 to-green-50 p-8">
         {/* Header with Brown Logo */}
         <div className="mb-8">
             <div className="flex items-center gap-3 mb-6">
@@ -174,7 +168,6 @@ export default function ManageUsersPage() {
             </div>
         )}
         </div>
-      </main>
-    </div>
+     
   )
 }

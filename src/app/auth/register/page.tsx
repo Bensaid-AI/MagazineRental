@@ -38,7 +38,7 @@ export default function RegisterPage() {
       if (response.ok) {
         setSuccess('Account created successfully! Redirecting to dashboard...')
         setTimeout(() => {
-          router.push('/dashboard')
+          router.push('/components/dashboard')
         }, 1500)
       } else {
         const data = await response.json()
