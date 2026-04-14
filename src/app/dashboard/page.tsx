@@ -1,7 +1,7 @@
 'use client'
 import { useState } from 'react'
 import Sidebar from './Sidebar'
-import ManageUsers from './ManageUsers'
+import ManageUsers from './users/ManageUsers'
 import Validation from './Validation'
 
 export default function DashboardPage() {

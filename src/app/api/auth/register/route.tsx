@@ -33,7 +33,7 @@ export async function POST(req: Request) {
           {
             id: data.user.id,
             email: data.user.email,
-            role: 'user',
+            role: 'client',
             created_at: new Date().toISOString(),
             fullname: fullname,
             cin: cin,
