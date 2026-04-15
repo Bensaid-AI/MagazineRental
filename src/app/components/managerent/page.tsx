@@ -41,7 +41,7 @@ export default function ManageRentalPage() {
   }
 
   const handleEdit = (id: string) => {
-    router.push(`./edit?id=${id}`)
+    router.push(`./managerent/edit?id=${id}`)
   }
 
   const handleDelete = async (id: string) => {
