@@ -1,5 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import RentalCard from './components/rentalcard'
 
 interface Rental {
   id: string
@@ -14,6 +16,7 @@ export default function ManageRentalPage() {
   const [rentals, setRentals] = useState<Rental[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const router = useRouter();
 
   useEffect(() => {
     fetchRentals()
@@ -37,6 +40,29 @@ export default function ManageRentalPage() {
     }
   }
 
+  const handleEdit = (id: string) => {
+    router.push(`./edit?id=${id}`)
+  }
+
+  const handleDelete = async (id: string) => {
+    try {
+      const response = await fetch(`/api/managerentals/${id}`, {
+        method: 'DELETE',
+      })
+
+      if (response.ok) {
+        // Remove the rental from the list
+        setRentals(rentals.filter(rental => rental.id !== id))
+      } else {
+        const data = await response.json()
+        setError(data.error || 'Failed to delete rental')
+      }
+    } catch (error) {
+      setError('Error deleting rental')
+      console.error('Error deleting rental:', error)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-amber-50 to-green-50 p-8">
       {/* Header with Brown Logo */}
@@ -52,10 +78,11 @@ export default function ManageRentalPage() {
 
       {/* Add Rental Button */}
       <div className="mb-8">
-        <button className="px-8 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white font-bold rounded-lg hover:from-green-600 hover:to-green-700 transition-all shadow-md">
+        <button  onClick={() => router.push("./managerent/add")} className="px-8 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white font-bold rounded-lg hover:from-green-600 hover:to-green-700 transition-all shadow-md">
           + Add New Rental
         </button>
       </div>
+
 
       {/* Error Message */}
       {error && (
@@ -92,52 +119,12 @@ export default function ManageRentalPage() {
       {!loading && rentals.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {rentals.map((rental) => (
-            <div
-              key={rental.id}
-              className="bg-white rounded-xl shadow-lg overflow-hidden border-2 border-green-100 hover:border-green-300 hover:shadow-xl transition-all"
-            >
-              {/* Image Section */}
-              <div className="w-full h-48 bg-gradient-to-br from-amber-200 to-green-200 flex items-center justify-center overflow-hidden">
-                <img 
-                  src={rental.image_url || '../../../../public/images/image1.webp'} 
-                  alt={rental.title}
-                  className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
-                />
-              </div>
-
-              {/* Card Header */}
-              <div className="bg-gradient-to-r from-amber-700 to-amber-900 px-6 py-4">
-                <h2 className="text-xl font-bold text-white">{rental.title}</h2>
-                <p className="text-amber-100 text-sm mt-1">ID: {rental.id}</p>
-              </div>
-
-              {/* Card Content */}
-              <div className="p-6">
-                <p className="text-gray-700 text-sm mb-4">{rental.description}</p>
-
-                {/* Details Grid */}
-                <div className="space-y-3 mb-6 bg-green-50 p-4 rounded-lg border border-green-200">
-                  <div>
-                    <span className="text-amber-900 font-bold text-sm">Price</span>
-                    <p className="text-green-700 font-bold text-lg">${rental.price}</p>
-                  </div>
-                  <div>
-                    <span className="text-amber-900 font-bold text-sm">Location</span>
-                    <p className="text-gray-800 font-medium">{rental.published_by}</p>
-                  </div>
-                </div>
-
-                {/* Action Buttons */}
-                <div className="flex gap-3">
-                  <button className="flex-1 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-lg transition-colors shadow-sm">
-                    ✎ Modify
-                  </button>
-                  <button className="flex-1 px-4 py-2 bg-red-500 hover:bg-red-600 text-white font-bold rounded-lg transition-colors shadow-sm">
-                    🗑 Delete
-                  </button>
-                </div>
-              </div>
-            </div>
+            <RentalCard 
+              key={rental.id} 
+              rental={rental}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+            />
           ))}
         </div>
       )}

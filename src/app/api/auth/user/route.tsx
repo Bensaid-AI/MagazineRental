@@ -1,5 +1,5 @@
 import { NextResponse, NextRequest } from 'next/server'
-import { supabaseServer } from '@/lib/supabaseServer'
+import { createClient } from '@supabase/supabase-js'
 
 export async function GET(req: NextRequest) {
   try {
@@ -13,8 +13,21 @@ export async function GET(req: NextRequest) {
       )
     }
 
-    // Get the current user from the token
-    const { data: { user }, error: userError } = await supabaseServer.auth.getUser(token)
+    // Create a client with the user's token to verify it
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        global: {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      }
+    )
+
+    // Get current user from the token
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
 
     if (userError || !user) {
       return NextResponse.json(
@@ -22,6 +35,18 @@ export async function GET(req: NextRequest) {
         { status: 401 }
       )
     }
+
+    // Create a server client to fetch profile
+    const supabaseServer = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false,
+        },
+      }
+    )
 
     // Get the user's profile data
     const { data: profile, error: profileError } = await supabaseServer
@@ -37,16 +62,17 @@ export async function GET(req: NextRequest) {
         user: {
           id: user.id,
           email: user.email,
-          role: 'user',
+          full_name: user.user_metadata?.full_name || user.email,
         },
       })
     }
 
     return NextResponse.json({
-      user: profile || {
-        id: user.id,
+      user: {
+        id: profile?.id || user.id,
         email: user.email,
-        role: 'user',
+        full_name: profile?.full_name || user.user_metadata?.full_name || user.email,
+        ...profile,
       },
     })
   } catch (error: any) {
