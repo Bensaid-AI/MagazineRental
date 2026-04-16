@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
 import RentalForm from '../components/rentalform'
+import { Card, CardContent } from '@/components/ui/card'
+import { Loader2 } from 'lucide-react'
 
 interface Rental {
   id: string
@@ -48,23 +50,25 @@ export default function EditRentalPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-amber-50 to-green-50 p-8 flex items-center justify-center">
-        <div className="text-center">
-          <div className="inline-flex items-center justify-center">
-            <div className="w-12 h-12 rounded-full border-4 border-amber-200 border-t-green-500 animate-spin"></div>
-          </div>
-          <p className="text-green-700 font-medium mt-4">Loading rental details...</p>
-        </div>
+      <div className="min-h-screen bg-gray-50 p-8 flex items-center justify-center">
+        <Card className="max-w-md w-full">
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <Loader2 className="w-8 h-8 text-gray-600 animate-spin mb-4" />
+            <p className="text-gray-600 font-medium">Loading rental details...</p>
+          </CardContent>
+        </Card>
       </div>
     )
   }
 
   if (error || !rental) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-amber-50 to-green-50 p-8 flex items-center justify-center">
-        <div className="text-center bg-white rounded-xl shadow-lg p-8 border-2 border-red-200">
-          <p className="text-red-800 font-medium text-lg">⚠️ {error || 'Rental not found'}</p>
-        </div>
+      <div className="min-h-screen bg-gray-50 p-8 flex items-center justify-center">
+        <Card className="max-w-md w-full border-red-200 bg-red-50">
+          <CardContent className="text-center py-8">
+            <p className="text-red-700 font-medium text-lg">⚠️ {error || 'Rental not found'}</p>
+          </CardContent>
+        </Card>
       </div>
     )
   }

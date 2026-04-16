@@ -1,7 +1,9 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import RentalCard from './components/rentalcard'
+import { RentalsTable } from './components/rentalsTable'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
+import { Plus, Loader2 } from 'lucide-react'
 
 interface Rental {
   id: string
@@ -16,7 +18,7 @@ export default function ManageRentalPage() {
   const [rentals, setRentals] = useState<Rental[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const router = useRouter();
+  const [showAddForm, setShowAddForm] = useState(false)
 
   useEffect(() => {
     fetchRentals()
@@ -40,10 +42,6 @@ export default function ManageRentalPage() {
     }
   }
 
-  const handleEdit = (id: string) => {
-    router.push(`./managerent/edit?id=${id}`)
-  }
-
   const handleDelete = async (id: string) => {
     try {
       const response = await fetch(`/api/managerentals/${id}`, {
@@ -51,7 +49,6 @@ export default function ManageRentalPage() {
       })
 
       if (response.ok) {
-        // Remove the rental from the list
         setRentals(rentals.filter(rental => rental.id !== id))
       } else {
         const data = await response.json()
@@ -63,31 +60,34 @@ export default function ManageRentalPage() {
     }
   }
 
+  const handleFormSuccess = () => {
+    setShowAddForm(false)
+    fetchRentals()
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-amber-50 to-green-50 p-8">
-      {/* Header with Brown Logo */}
+    <div className="min-h-screen bg-gray-50 p-8">
+      {/* Header */}
       <div className="mb-8">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="w-12 h-12 bg-gradient-to-br from-amber-700 to-amber-900 rounded-lg flex items-center justify-center">
-            <span className="text-2xl font-bold text-white">RM</span>
-          </div>
-          <h1 className="text-4xl font-bold text-amber-900">Manage Rentals</h1>
-        </div>
-        <p className="text-amber-700 text-lg">Monitor and manage all rental listings</p>
+        <h1 className="text-4xl font-bold text-gray-900">Manage Rentals</h1>
+        <p className="text-gray-600 mt-2">Monitor and manage all rental listings</p>
       </div>
 
       {/* Add Rental Button */}
       <div className="mb-8">
-        <button  onClick={() => router.push("./managerent/add")} className="px-8 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white font-bold rounded-lg hover:from-green-600 hover:to-green-700 transition-all shadow-md">
-          + Add New Rental
-        </button>
+        <Button 
+          onClick={() => setShowAddForm(true)}
+          className="bg-gray-900 hover:bg-gray-800 text-white"
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          Add New Rental
+        </Button>
       </div>
-
 
       {/* Error Message */}
       {error && (
-        <div className="mb-6 p-4 bg-red-100 border-l-4 border-red-500 rounded-lg shadow-sm">
-          <p className="text-red-800 font-medium flex items-center">
+        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+          <p className="text-red-700 font-medium flex items-center">
             <span className="mr-2">⚠️</span>
             {error}
           </p>
@@ -96,51 +96,47 @@ export default function ManageRentalPage() {
 
       {/* Loading State */}
       {loading && (
-        <div className="flex items-center justify-center py-12">
-          <div className="text-center">
-            <div className="inline-flex items-center justify-center">
-              <div className="w-12 h-12 rounded-full border-4 border-amber-200 border-t-green-500 animate-spin"></div>
+        <Card>
+          <CardContent className="flex items-center justify-center py-12">
+            <div className="text-center">
+              <Loader2 className="w-8 h-8 text-gray-600 animate-spin mx-auto mb-4" />
+              <p className="text-gray-600 font-medium">Loading rentals...</p>
             </div>
-            <p className="text-green-700 font-medium mt-4">Loading rentals...</p>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       )}
 
       {/* Empty State */}
       {!loading && rentals.length === 0 && !error && (
-        <div className="text-center py-16 bg-white rounded-xl shadow-sm border-2 border-dashed border-green-300">
-          <div className="text-5xl mb-4">📦</div>
-          <p className="text-gray-500 text-lg font-medium">No rentals found yet</p>
-          <p className="text-gray-400 mt-2">Click "Add New Rental" to get started</p>
-        </div>
+        <Card>
+          <CardContent className="text-center py-16">
+            <p className="text-gray-500 text-lg font-medium">No rentals found yet</p>
+            <p className="text-gray-400 mt-2">Click "Add New Rental" to get started</p>
+          </CardContent>
+        </Card>
       )}
 
-      {/* Rental Cards Grid */}
+      {/* Rentals Table */}
       {!loading && rentals.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {rentals.map((rental) => (
-            <RentalCard 
-              key={rental.id} 
-              rental={rental}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-            />
-          ))}
-        </div>
+        <RentalsTable 
+          rentals={rentals}
+          onEdit={() => {}}
+          onDelete={handleDelete}
+          onFormSubmit={handleFormSuccess}
+          showAddForm={showAddForm}
+          onAddFormClose={() => setShowAddForm(false)}
+        />
       )}
 
       {/* Footer Stats */}
       {!loading && rentals.length > 0 && (
-        <div className="mt-8 bg-white rounded-xl shadow-lg border-2 border-green-100 p-6">
-          <div className="flex justify-between items-center">
-            <p className="text-green-700 font-medium text-lg">
-              ✓ Showing <span className="font-bold text-amber-900">{rentals.length}</span> active rentals
+        <Card className="mt-8">
+          <CardContent className="flex justify-between items-center py-6">
+            <p className="text-gray-700 font-medium text-lg">
+              ✓ Showing <span className="font-bold text-gray-900">{rentals.length}</span> active rentals
             </p>
-            <button className="px-6 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white font-bold rounded-lg hover:from-green-600 hover:to-green-700 transition-all shadow-md">
-              📊 Export Report
-            </button>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       )}
     </div>
   )
