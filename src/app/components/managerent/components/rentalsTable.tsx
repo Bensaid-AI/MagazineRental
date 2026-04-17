@@ -46,7 +46,6 @@ export function RentalsTable({ rentals, onEdit, onDelete, onFormSubmit, showAddF
     title: '',
     description: '',
     price: '',
-    published_by: '',
   });
 
   // Load form data when modal opens for edit
@@ -58,13 +57,12 @@ export function RentalsTable({ rentals, onEdit, onDelete, onFormSubmit, showAddF
           title: rental.title,
           description: rental.description,
           price: rental.price.toString(),
-          published_by: rental.published_by,
         });
-        setImagePreview(rental.image_url);
+        // Only set image preview if image_url is valid and not null/undefined
+        setImagePreview(rental.image_url && rental.image_url !== 'undefined' ? rental.image_url : null);
       }
     } else if (formModal?.mode === 'add') {
       resetForm();
-      loadUserProfile();
     }
   }, [formModal]);
 
@@ -75,39 +73,18 @@ export function RentalsTable({ rentals, onEdit, onDelete, onFormSubmit, showAddF
     }
   }, [showAddForm]);
 
-  const loadUserProfile = async () => {
-    try {
-      setFormLoading(true);
-      const response = await fetch('/api/auth/user');
-      if (response.ok) {
-        const result = await response.json();
-        const fullName = result.user?.fullname || result.user?.email || 'Unknown User';
-        setUserProfile({fullname: fullName});
-        setFormData(prev => ({
-          ...prev,
-          published_by: fullName
-        }));
-      }
-    } catch (err) {
-      console.error('Error loading profile:', err);
-    } finally {
-      setFormLoading(false);
-    }
-  };
-
-  const resetForm = () => {
-    setFormData({ title: '', description: '', price: '', published_by: '' });
-    setImageFile(null);
-    setImagePreview(null);
-    setFormError('');
-  };
-
   const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
       [name]: value
     }));
+  };
+  const resetForm = () => {
+    setFormData({ title: '', description: '', price: '' });
+    setImageFile(null);
+    setImagePreview(null);
+    setFormError('');
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -128,18 +105,33 @@ export function RentalsTable({ rentals, onEdit, onDelete, onFormSubmit, showAddF
     setFormSubmitting(true);
 
     try {
+      // Validate required fields
+      if (!formData.title || !formData.description || !formData.price) {
+        throw new Error('Please fill in all required fields');
+      }
+
       const url = formModal?.mode === 'add' ? '/api/managerentals' : `/api/managerentals/${formModal?.id}`;
       const method = formModal?.mode === 'add' ? 'POST' : 'PUT';
 
       const submitData = new FormData();
       submitData.append('title', formData.title);
       submitData.append('description', formData.description);
-      submitData.append('price', formData.price);
-      submitData.append('published_by', formData.published_by);
+      submitData.append('price', formData.price.toString());
+      
+      // Log what's being sent for debugging
+      console.log('Submitting form data:', {
+        title: formData.title,
+        description: formData.description,
+        price: formData.price,
+        hasImage: !!imageFile,
+        hasImagePreview: !!imagePreview,
+        imagePreviewValue: imagePreview,
+      });
       
       if (imageFile) {
         submitData.append('image', imageFile);
-      } else if (imagePreview && !imageFile && formModal?.mode === 'add') {
+      } else if (imagePreview && imagePreview !== 'undefined' && !imageFile) {
+        // Send existing image URL for both add and edit modes (only if valid)
         submitData.append('image_url', imagePreview);
       }
 
@@ -158,6 +150,7 @@ export function RentalsTable({ rentals, onEdit, onDelete, onFormSubmit, showAddF
       if (onFormSubmit) onFormSubmit();
       if (onAddFormClose) onAddFormClose();
     } catch (err: any) {
+      console.error('Form submission error:', err);
       setFormError(err.message || `Error ${formModal?.mode === 'add' ? 'adding' : 'updating'} rental`);
     } finally {
       setFormSubmitting(false);
@@ -174,7 +167,6 @@ export function RentalsTable({ rentals, onEdit, onDelete, onFormSubmit, showAddF
               <TableHead className="w-24 text-gray-700 font-semibold">Rental ID</TableHead>
               <TableHead className="text-gray-700 font-semibold">Title</TableHead>
               <TableHead className="w-24 text-gray-700 font-semibold">Price</TableHead>
-              <TableHead className="w-32 text-gray-700 font-semibold">Publisher</TableHead>
               <TableHead className="w-20 text-center text-gray-700 font-semibold">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -201,9 +193,7 @@ export function RentalsTable({ rentals, onEdit, onDelete, onFormSubmit, showAddF
                 <TableCell className="text-sm font-semibold text-gray-800">
                   ${rental.price}
                 </TableCell>
-                <TableCell className="text-sm text-gray-600">
-                  {rental.published_by}
-                </TableCell>
+                
                 <TableCell>
                   <div className="flex items-center justify-center gap-2">
                     <Button
@@ -369,21 +359,6 @@ export function RentalsTable({ rentals, onEdit, onDelete, onFormSubmit, showAddF
                       required
                       disabled={formSubmitting}
                       className="border-gray-200"
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="form-publisher" className="mb-2">
-                      Publisher
-                    </Label>
-                    <Input
-                      id="form-publisher"
-                      type="text"
-                      name="published_by"
-                      value={formData.published_by}
-                      onChange={handleFormChange}
-                      disabled
-                      className="border-gray-200 bg-gray-100"
                     />
                   </div>
 

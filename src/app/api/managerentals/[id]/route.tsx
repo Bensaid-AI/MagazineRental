@@ -1,13 +1,28 @@
-import { supabaseServer } from '@/lib/supabaseServer'
+import { createClient } from '@supabase/supabase-js'
+import { NextResponse, NextRequest } from 'next/server'
 
 export async function GET(
-  req: Request,
-  { params }: { params: { id: string } }
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params
+    const { id } = await params
+    const token = req.cookies.get('sb:token')?.value
 
-    const { data, error } = await supabaseServer
+    // Create authenticated client if token exists, otherwise use anon
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      token ? {
+        global: {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      } : undefined
+    )
+
+    const { data, error } = await supabase
       .from('rentals')
       .select('*')
       .eq('id', id)
@@ -15,37 +30,74 @@ export async function GET(
 
     if (error) throw new Error(error.message)
 
-    return Response.json({ rental: data })
+    return NextResponse.json({ rental: data })
   } catch (error: any) {
     console.error('Error fetching rental:', error)
-    return Response.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }
 
 export async function PUT(
-  req: Request,
-  { params }: { params: { id: string } }
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params
+    const { id } = await params
+    const token = req.cookies.get('sb:token')?.value
+
+    if (!token) {
+      return NextResponse.json(
+        { error: 'Not authenticated' },
+        { status: 401 }
+      )
+    }
+
     const formData = await req.formData()
 
     const title = formData.get('title') as string
     const description = formData.get('description') as string
     const price = formData.get('price') as string
-    const published_by = formData.get('published_by') as string
     const image = formData.get('image') as File | null
     const image_url = formData.get('image_url') as string | null
 
-    if (!title || !description || !price || !published_by) {
-      return Response.json({ error: 'Missing required fields' }, { status: 400 })
+    // Validate required fields
+    if (!title || !description || !price) {
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+    }
+
+    // Validate price is a valid number
+    const parsedPrice = parseFloat(price)
+    if (isNaN(parsedPrice) || parsedPrice < 0) {
+      return NextResponse.json({ error: 'Price must be a valid number' }, { status: 400 })
+    }
+
+    // Create authenticated client with user's token
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        global: {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      }
+    )
+
+    // Get current user to verify ownership
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    
+    if (userError || !user) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
     }
 
     const updateData: any = {
       title,
       description,
-      price: parseFloat(price),
-      published_by,
+      price: parsedPrice,
     }
 
     // Handle image file
@@ -54,43 +106,85 @@ export async function PUT(
       const buffer = Buffer.from(bytes)
       // Convert to base64
       updateData.image_url = `data:${image.type};base64,${buffer.toString('base64')}`
-    } else if (image_url) {
-      // Keep existing image if no new file uploaded
+    } else if (image_url && image_url !== 'undefined') {
+      // Keep existing image if no new file uploaded (and it's valid)
       updateData.image_url = image_url
     }
 
-    const { data, error } = await supabaseServer
+    // Use authenticated client - RLS will verify ownership
+    const { data, error } = await supabase
       .from('rentals')
       .update(updateData)
       .eq('id', id)
+      .eq('published_by', user.id) // Ensure user owns this rental
       .select()
 
     if (error) throw new Error(error.message)
 
-    return Response.json({ rental: data[0] })
+    if (!data || data.length === 0) {
+      return NextResponse.json(
+        { error: 'Rental not found or unauthorized' },
+        { status: 404 }
+      )
+    }
+
+    return NextResponse.json({ rental: data[0] })
   } catch (error: any) {
     console.error('Error updating rental:', error)
-    return Response.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }
 
 export async function DELETE(
-  req: Request,
-  { params }: { params: { id: string } }
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params
+    const { id } = await params
+    const token = req.cookies.get('sb:token')?.value
 
-    const { error } = await supabaseServer
+    if (!token) {
+      return NextResponse.json(
+        { error: 'Not authenticated' },
+        { status: 401 }
+      )
+    }
+
+    // Create authenticated client with user's token
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        global: {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      }
+    )
+
+    // Get current user to verify ownership
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    
+    if (userError || !user) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
+    // Use authenticated client with ownership check
+    const { error } = await supabase
       .from('rentals')
       .delete()
       .eq('id', id)
+      .eq('published_by', user.id) // Ensure user owns this rental
 
     if (error) throw new Error(error.message)
 
-    return Response.json({ message: 'Rental deleted successfully' })
+    return NextResponse.json({ message: 'Rental deleted successfully' })
   } catch (error: any) {
     console.error('Error deleting rental:', error)
-    return Response.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }

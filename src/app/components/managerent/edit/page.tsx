@@ -31,7 +31,7 @@ export default function EditRentalPage() {
 
     const fetchRental = async () => {
       try {
-        const response = await fetch(`/api/managerentals/[id]/${rentalId}`)
+        const response = await fetch(`/api/managerentals/${rentalId}`)
         if (!response.ok) {
           throw new Error('Failed to fetch rental details')
         }

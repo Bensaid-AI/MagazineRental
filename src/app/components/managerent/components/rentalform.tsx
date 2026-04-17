@@ -33,7 +33,6 @@ export default function RentalForm({ mode, initialData, onSuccess }: RentalFormP
     title: initialData?.title || '',
     description: initialData?.description || '',
     price: initialData?.price || '',
-    published_by: initialData?.published_by || '',
   })
 
   useEffect(() => {
@@ -50,12 +49,8 @@ export default function RentalForm({ mode, initialData, onSuccess }: RentalFormP
         }
 
         const result = await response.json()
-        const fullName = result.user?.fullname || result.user?.email || 'Unknown User'
-        
-        setFormData(prev => ({
-          ...prev,
-          published_by: fullName
-        }))
+        // Just verify user is authenticated; API will set published_by from token
+        console.log('User authenticated:', result.user?.email)
       } catch (err) {
         console.error('Error fetching user profile:', err)
         setError('Failed to load your profile information')
@@ -100,7 +95,6 @@ export default function RentalForm({ mode, initialData, onSuccess }: RentalFormP
       submitData.append('title', formData.title)
       submitData.append('description', formData.description)
       submitData.append('price', formData.price.toString())
-      submitData.append('published_by', formData.published_by)
       
       if (imageFile) {
         submitData.append('image', imageFile)
@@ -220,23 +214,6 @@ export default function RentalForm({ mode, initialData, onSuccess }: RentalFormP
                   min="0"
                   required
                 />
-              </div>
-
-              <div>
-                <Label htmlFor="published_by" className="mb-2 block">
-                  Publisher / Your Name
-                </Label>
-                <Input
-                  type="text"
-                  id="published_by"
-                  name="published_by"
-                  value={formData.published_by}
-                  onChange={handleChange}
-                  placeholder="Loaded from your profile..."
-                  disabled
-                  className="bg-gray-100"
-                />
-                <p className="text-xs text-gray-500 mt-1">Automatically filled from your profile</p>
               </div>
 
               <div>
