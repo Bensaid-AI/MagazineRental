@@ -40,19 +40,7 @@ export default function Sidebar({ activeTab, setActiveTab, user, loading }: Side
       id: 'overview',
       label: 'Dashboard',
       icon: <Home className="w-5 h-5" />,
-      roles: ['client', 'admin', 'manager'],
-    },
-    {
-      id: 'rent',
-      label: 'Rent',
-      icon: <ShoppingBag className="w-5 h-5" />,
-      roles: ['client'],
-    },
-    {
-      id: 'profile',
-      label: 'Profile',
-      icon: <User className="w-5 h-5" />,
-      roles: ['client'],
+      roles: [ 'admin', 'manager'],
     },
     {
       id: 'users',

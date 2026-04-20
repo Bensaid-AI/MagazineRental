@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import Sidebar from './Sidebar'
+import ClientNavbar from './Navbar'
 import ManageUsersPage from '../manageusers/page'
 import Validation from '../rentvalidation/Validation'
 import RentPage from '../rent/page'
@@ -41,13 +42,26 @@ export default function DashboardPage() {
     }
   }
 
+  const isClient = user?.role?.toLowerCase() === 'client'
+
+  // When loading or immediately after fetch, ensure the active tab is correct
+  useEffect(() => {
+    if (user?.role?.toLowerCase() === 'client' && activeTab === 'overview') {
+      setActiveTab('rent')
+    }
+  }, [user, activeTab])
+
   return (
-    <div className="flex h-screen bg-gray-100">
-      {/* Sidebar */}
-      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} user={user} loading={loading} />
+    <div className={isClient ? "min-h-screen bg-gray-50 flex flex-col" : "flex h-screen bg-gray-100"}>
+      {/* Navigation */}
+      {isClient ? (
+        <ClientNavbar activeTab={activeTab} setActiveTab={setActiveTab} user={user} />
+      ) : (
+        <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} user={user} loading={loading} />
+      )}
 
       {/* Main Content */}
-      <main className="flex-1 overflow-auto">
+      <main className={isClient ? "flex-1 overflow-auto bg-gray-50 max-w-11xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8" : "flex-1 overflow-auto"}>
         {/* Overview Tab */}
         {activeTab === 'overview' && (
           <div className="p-8">
