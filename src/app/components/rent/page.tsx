@@ -5,6 +5,8 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Search, Loader2, Info, User, Mail, MessageCircle } from 'lucide-react'
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import BookingModal from './BookingModal'
+import RentalCard from './RentalCard'
 
 interface Rental {
   id: string;
@@ -13,9 +15,17 @@ interface Rental {
   price: string | number;
   published_by: string;
   image_url: string;
+  state?: string;
   profiles?: {
     fullname: string;
     email: string;
+  };
+}
+
+interface AuthUser {
+  email: string;
+  user_metadata?: {
+    full_name?: string;
   };
 }
 
@@ -24,10 +34,26 @@ export default function RentPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
+  const [user, setUser] = useState<AuthUser | null>(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [selectedRental, setSelectedRental] = useState<Rental | null>(null)
 
   useEffect(() => {
+    fetchUser()
     fetchRentals()
   }, [])
+
+  const fetchUser = async () => {
+    try {
+      const res = await fetch('/api/auth/user')
+      if (res.ok) {
+        const data = await res.json()
+        setUser(data.user)
+      }
+    } catch (err) {
+      console.error('Error fetching user:', err)
+    }
+  }
 
   const fetchRentals = async () => {
     try {
@@ -41,6 +67,22 @@ export default function RentPage() {
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleRentClick = (rental: Rental) => {
+    if (!user) {
+      setError('Please log in to book a rental')
+      return
+    }
+    setSelectedRental(rental)
+    setIsModalOpen(true)
+  }
+
+  const handleBookingSuccess = () => {
+    // Refresh rentals after successful booking
+    fetchRentals()
+    setIsModalOpen(false)
+    setSelectedRental(null)
   }
 
   const filteredRentals = rentals.filter(rental => 
@@ -102,6 +144,13 @@ export default function RentPage() {
                 <div className="absolute top-3 right-3 bg-white/95 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-semibold text-gray-900 shadow-sm">
                   ${rental.price}
                 </div>
+                {rental.state === 'reserved' && (
+                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                    <span className="bg-yellow-500 text-white px-4 py-2 rounded-lg font-semibold">
+                      Reserved
+                    </span>
+                  </div>
+                )}
               </div>
               
               
@@ -136,14 +185,28 @@ export default function RentPage() {
                 <Button variant="outline" className="flex-1 bg-white border-gray-200 text-gray-700 hover:text-gray-900 hover:bg-gray-50 transition-colors">
                   Details
                 </Button>
-                <Button className="flex-1 bg-gray-900 hover:bg-gray-800 text-white transition-colors">
-                  <MessageCircle className="w-4 h-4 mr-2" />
-                  Contact
+                <Button
+                  onClick={() => handleRentClick(rental)}
+                  disabled={rental.state === 'reserved'}
+                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+                >
+                  {rental.state === 'reserved' ? 'Reserved' : 'Rent Now'}
                 </Button>
               </CardFooter>
             </Card>
           ))}
         </div>
+      )}
+
+      {/* Booking Modal */}
+      {selectedRental && (
+        <BookingModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          rental={selectedRental}
+          user={user}
+          onBookingSuccess={handleBookingSuccess}
+        />
       )}
     </div>
   )

@@ -9,23 +9,34 @@ export async function GET(
     const { id } = await params
     const token = req.cookies.get('sb:token')?.value
 
-    // Create authenticated client if token exists, otherwise use anon
+    if (!token) {
+      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
+    }
+
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      token ? {
+      {
         global: {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         },
-      } : undefined
+      }
     )
+
+    // Get current user
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    
+    if (userError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
 
     const { data, error } = await supabase
       .from('rentals')
       .select('*')
       .eq('id', id)
+      .eq('published_by', user.id)
       .single()
 
     if (error) throw new Error(error.message)
