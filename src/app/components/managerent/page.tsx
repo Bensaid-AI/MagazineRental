@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react'
 import { RentalsTable } from './components/rentalsTable'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { Plus, Loader2 } from 'lucide-react'
+import { Plus, Loader2, X } from 'lucide-react'
 
 interface Rental {
   id: string
@@ -12,6 +12,7 @@ interface Rental {
   price: string | number
   published_by: string
   image_url: string
+  state?: string
 }
 
 export default function ManageRentalPage() {
@@ -19,6 +20,19 @@ export default function ManageRentalPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [showAddForm, setShowAddForm] = useState(false)
+  const [togglingRentalId, setTogglingRentalId] = useState<string | null>(null)
+  const [toastMessage, setToastMessage] = useState('')
+  const [toastType, setToastType] = useState<'success' | 'error'>('success')
+
+  useEffect(() => {
+    if (!toastMessage) return
+
+    const timer = setTimeout(() => {
+      setToastMessage('')
+    }, 2500)
+
+    return () => clearTimeout(timer)
+  }, [toastMessage])
 
   useEffect(() => {
     fetchRentals()
@@ -63,6 +77,39 @@ export default function ManageRentalPage() {
   const handleFormSuccess = () => {
     setShowAddForm(false)
     fetchRentals()
+  }
+
+  const handleToggleState = async (id: string, nextState: 'not_rented' | 'not_available') => {
+    try {
+      setError('')
+      setTogglingRentalId(id)
+
+      const response = await fetch(`/api/managerentals/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ state: nextState }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to update rental state')
+      }
+
+      setRentals((prev) =>
+        prev.map((rental) =>
+          rental.id === id ? { ...rental, state: data.rental?.state ?? nextState } : rental
+        )
+      )
+      setToastType('success')
+      setToastMessage(nextState === 'not_rented' ? 'Marked as Not Rented' : 'Marked as Rented')
+    } catch (err: any) {
+      setError(err.message || 'Error updating rental state')
+      setToastType('error')
+      setToastMessage(err.message || 'Error updating rental state')
+    } finally {
+      setTogglingRentalId(null)
+    }
   }
 
   return (
@@ -122,6 +169,8 @@ export default function ManageRentalPage() {
           rentals={rentals}
           onEdit={() => {}}
           onDelete={handleDelete}
+          onToggleState={handleToggleState}
+          togglingRentalId={togglingRentalId}
           onFormSubmit={handleFormSuccess}
           showAddForm={showAddForm}
           onAddFormClose={() => setShowAddForm(false)}
@@ -137,6 +186,27 @@ export default function ManageRentalPage() {
             </p>
           </CardContent>
         </Card>
+      )}
+
+      {toastMessage && (
+        <div className="fixed bottom-5 right-5 z-50 w-full max-w-sm">
+          <Card className={toastType === 'success' ? 'border-emerald-200' : 'border-red-200'}>
+            <CardContent className="py-3 px-4 flex items-center justify-between gap-3">
+              <p className={toastType === 'success' ? 'text-emerald-700 text-sm font-medium' : 'text-red-700 text-sm font-medium'}>
+                {toastMessage}
+              </p>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7"
+                onClick={() => setToastMessage('')}
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
       )}
     </div>
   )

@@ -109,6 +109,7 @@ export async function POST(req: NextRequest) {
       description, 
       price: parsedPrice, 
       published_by: user.id,
+      state: 'not_rented',
     }
 
     // Only include image_url if it has a value

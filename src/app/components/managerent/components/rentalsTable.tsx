@@ -22,18 +22,30 @@ interface Rental {
   price: string | number;
   published_by: string;
   image_url: string;
+  state?: string;
 }
 
 interface RentalsTableProps {
   rentals: Rental[];
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
+  onToggleState: (id: string, nextState: 'not_rented' | 'not_available') => void;
+  togglingRentalId?: string | null;
   onFormSubmit?: () => void;
   showAddForm?: boolean;
   onAddFormClose?: () => void;
 }
 
-export function RentalsTable({ rentals, onEdit, onDelete, onFormSubmit, showAddForm = false, onAddFormClose }: RentalsTableProps) {
+export function RentalsTable({
+  rentals,
+  onEdit,
+  onDelete,
+  onToggleState,
+  togglingRentalId = null,
+  onFormSubmit,
+  showAddForm = false,
+  onAddFormClose,
+}: RentalsTableProps) {
   const [selectedImage, setSelectedImage] = useState<{url: string; title: string} | null>(null);
   const [formModal, setFormModal] = useState<{mode: 'add' | 'edit', id?: string} | null>(null);
   const [formLoading, setFormLoading] = useState(false);
@@ -157,6 +169,28 @@ export function RentalsTable({ rentals, onEdit, onDelete, onFormSubmit, showAddF
     }
   };
 
+  const getStateLabel = (state?: string) => {
+    const normalized = (state || '').toLowerCase();
+    if (['rented', 'reserved', 'not_available', 'not available'].includes(normalized)) {
+      return 'Rented';
+    }
+    return 'Not Rented';
+  };
+
+  const getStateClasses = (state?: string) => {
+    return getStateLabel(state) === 'Rented'
+      ? 'bg-rose-100 text-rose-700 border-rose-200'
+      : 'bg-emerald-100 text-emerald-700 border-emerald-200';
+  };
+
+  const getNextState = (state?: string): 'not_rented' | 'not_available' => {
+    return getStateLabel(state) === 'Rented' ? 'not_rented' : 'not_available';
+  };
+
+  const getToggleLabel = (state?: string) => {
+    return getStateLabel(state) === 'Rented' ? 'Mark Not Rented' : 'Mark Rented';
+  };
+
   return (
     <>
       <div className="rounded-lg border border-gray-200 bg-white overflow-hidden">
@@ -167,7 +201,8 @@ export function RentalsTable({ rentals, onEdit, onDelete, onFormSubmit, showAddF
               <TableHead className="w-24 text-gray-700 font-semibold">Rental ID</TableHead>
               <TableHead className="text-gray-700 font-semibold">Title</TableHead>
               <TableHead className="w-24 text-gray-700 font-semibold">Price</TableHead>
-              <TableHead className="w-20 text-center text-gray-700 font-semibold">Actions</TableHead>
+              <TableHead className="w-36 text-gray-700 font-semibold">State</TableHead>
+              <TableHead className="w-56 text-center text-gray-700 font-semibold">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -193,9 +228,30 @@ export function RentalsTable({ rentals, onEdit, onDelete, onFormSubmit, showAddF
                 <TableCell className="text-sm font-semibold text-gray-800">
                   ${rental.price}
                 </TableCell>
+                <TableCell>
+                  <span className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${getStateClasses(rental.state)}`}>
+                    {getStateLabel(rental.state)}
+                  </span>
+                </TableCell>
                 
                 <TableCell>
                   <div className="flex items-center justify-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onToggleState(rental.id, getNextState(rental.state))}
+                      disabled={togglingRentalId === rental.id}
+                      className="text-xs"
+                    >
+                      {togglingRentalId === rental.id ? (
+                        <>
+                          <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                          Updating...
+                        </>
+                      ) : (
+                        getToggleLabel(rental.state)
+                      )}
+                    </Button>
                     <Button
                       variant="ghost"
                       size="sm"

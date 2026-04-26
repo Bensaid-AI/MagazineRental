@@ -29,7 +29,16 @@ interface AuthUser {
   };
 }
 
-export default function RentPage() {
+interface RentPageProps {
+  onBookingSuccess?: () => void
+}
+
+const isRentalUnavailable = (state?: string) => {
+  if (!state) return false
+  return ['reserved', 'not_available', 'not available'].includes(state.toLowerCase())
+}
+
+export default function RentPage({ onBookingSuccess }: RentPageProps) {
   const [rentals, setRentals] = useState<Rental[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -83,6 +92,7 @@ export default function RentPage() {
     fetchRentals()
     setIsModalOpen(false)
     setSelectedRental(null)
+    onBookingSuccess?.()
   }
 
   const filteredRentals = rentals.filter(rental => 
@@ -144,10 +154,10 @@ export default function RentPage() {
                 <div className="absolute top-3 right-3 bg-white/95 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-semibold text-gray-900 shadow-sm">
                   ${rental.price}
                 </div>
-                {rental.state === 'reserved' && (
+                {isRentalUnavailable(rental.state) && (
                   <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
                     <span className="bg-yellow-500 text-white px-4 py-2 rounded-lg font-semibold">
-                      Reserved
+                      Not Available
                     </span>
                   </div>
                 )}
@@ -187,10 +197,10 @@ export default function RentPage() {
                 </Button>
                 <Button
                   onClick={() => handleRentClick(rental)}
-                  disabled={rental.state === 'reserved'}
+                  disabled={isRentalUnavailable(rental.state)}
                   className="flex-1 bg-blue-600 hover:bg-blue-700 text-white transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
                 >
-                  {rental.state === 'reserved' ? 'Reserved' : 'Rent Now'}
+                  {isRentalUnavailable(rental.state) ? 'Not Available' : 'Rent Now'}
                 </Button>
               </CardFooter>
             </Card>

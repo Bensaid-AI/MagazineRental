@@ -7,6 +7,7 @@ import Validation from '../rentvalidation/Validation'
 import RentPage from '../rent/page'
 import ProfilePage from '../profile/page'
 import ManageRentalPage from '../managerent/page'
+import MyBookingsPage from '../mybookings/page'
 
 interface User {
   id: string
@@ -117,7 +118,10 @@ export default function DashboardPage() {
         )}
 
         {/* Rent Tab */}
-        {activeTab === 'rent' && <RentPage />}
+        {activeTab === 'rent' && <RentPage onBookingSuccess={() => setActiveTab('mybookings')} />}
+
+        {/* My Bookings Tab */}
+        {activeTab === 'mybookings' && <MyBookingsPage />}
 
         {/* Profile Tab */}
         {activeTab === 'profile' && <ProfilePage />}

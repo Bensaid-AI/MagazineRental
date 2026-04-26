@@ -1,4 +1,4 @@
-import { LogOut, Home, User } from 'lucide-react'
+import { LogOut, Home, User, CalendarDays } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 interface UserData {
@@ -37,6 +37,11 @@ export default function ClientNavbar({ activeTab, setActiveTab, user }: NavbarPr
       id: 'rent',
       label: 'Browse Rentals',
       icon: <Home className="w-4 h-4 mr-2 " />,
+    },
+    {
+      id: 'mybookings',
+      label: 'My Bookings',
+      icon: <CalendarDays className="w-4 h-4 mr-2" />,
     },
     {
       id: 'profile',

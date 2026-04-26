@@ -70,9 +70,9 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    if (rental.state === 'reserved') {
+    if (['reserved', 'not_available', 'not available'].includes((rental.state || '').toLowerCase())) {
       return NextResponse.json(
-        { error: 'This rental is already reserved' },
+        { error: 'This rental is not available' },
         { status: 400 }
       )
     }
@@ -118,10 +118,10 @@ export async function POST(req: NextRequest) {
       throw new Error(createError.message)
     }
 
-    // Update rental state to reserved
+    // Mark rental as not available after a successful booking
     const { error: updateError } = await supabase
       .from('rentals')
-      .update({ state: 'reserved' })
+      .update({ state: 'not_available' })
       .eq('id', rental_id)
 
     if (updateError) {

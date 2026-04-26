@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { X, Loader2, AlertCircle, CheckCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -37,8 +37,17 @@ export default function BookingModal({
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
+  const successTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   if (!isOpen) return null
+
+  useEffect(() => {
+    return () => {
+      if (successTimeoutRef.current) {
+        clearTimeout(successTimeoutRef.current)
+      }
+    }
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -84,7 +93,7 @@ export default function BookingModal({
       }
 
       setSuccess(true)
-      setTimeout(() => {
+      successTimeoutRef.current = setTimeout(() => {
         onBookingSuccess()
         handleClose()
       }, 2000)
@@ -96,12 +105,21 @@ export default function BookingModal({
   }
 
   const handleClose = () => {
+    if (successTimeoutRef.current) {
+      clearTimeout(successTimeoutRef.current)
+      successTimeoutRef.current = null
+    }
     setPhone('')
     setStartDate('')
     setEndDate('')
     setError(null)
     setSuccess(false)
     onClose()
+  }
+
+  const handleViewBookings = () => {
+    onBookingSuccess()
+    handleClose()
   }
 
   const userName = user?.user_metadata?.full_name || 'User'
@@ -130,6 +148,9 @@ export default function BookingModal({
               <p className="text-gray-600">
                 Your booking for {rental.title} has been created
               </p>
+              <Button onClick={handleViewBookings} className="mt-5 w-full">
+                View My Bookings
+              </Button>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -218,7 +239,7 @@ export default function BookingModal({
             </Button>
             <Button
               onClick={handleSubmit}
-              disabled={loading || rental.state === 'reserved'}
+              disabled={loading || ['reserved', 'not_available', 'not available'].includes((rental.state || '').toLowerCase())}
               className="flex-1"
             >
               {loading ? (
